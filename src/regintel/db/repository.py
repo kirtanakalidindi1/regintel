@@ -4,9 +4,9 @@ from collections.abc import Iterable
 from datetime import UTC, datetime
 
 from sqlalchemy import select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, aliased
 
-from regintel.db.models import Update
+from regintel.db.models import AnalysisRecord, Update
 from regintel.ingest.schema import NormalizedUpdate
 
 
@@ -67,3 +67,45 @@ def upsert_updates(
 
     session.commit()
     return counts
+
+
+def updates_needing_analysis(
+    session: Session, prompt_version: str, limit: int
+) -> list[Update]:
+    """Updates with no analysis for this prompt version, or whose content changed since."""
+    analysed = aliased(Update)
+    current = (
+        select(AnalysisRecord.update_id)
+        .join(analysed, AnalysisRecord.update_id == analysed.id)
+        .where(
+            AnalysisRecord.prompt_version == prompt_version,
+            AnalysisRecord.source_hash == analysed.content_hash,
+        )
+    )
+    stmt = (
+        select(Update)
+        .where(Update.id.not_in(current))
+        .order_by(Update.published_date.desc())
+        .limit(limit)
+    )
+    return list(session.scalars(stmt))
+
+
+def save_analysis(session: Session, update: Update, result) -> AnalysisRecord:
+    a = result.analysis
+    record = AnalysisRecord(
+        update_id=update.id,
+        model=result.model,
+        prompt_version=result.prompt_version,
+        source_hash=update.content_hash,
+        topic=a.topic,
+        product_type=a.product_type,
+        therapeutic_areas=list(a.therapeutic_areas),
+        relevance=a.relevance,
+        relevance_rationale=a.relevance_rationale,
+        summary_points=result.summary_points,
+        all_citations_supported=result.all_citations_supported,
+    )
+    session.add(record)
+    session.commit()
+    return record

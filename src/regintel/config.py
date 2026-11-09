@@ -13,6 +13,7 @@ DATA_DIR = PROJECT_ROOT / "data"
 
 OPENFDA_API_KEY = os.getenv("OPENFDA_API_KEY")  # optional; raises openFDA rate limits
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
+ANTHROPIC_MODEL = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-5-5")
 
 
 def get_database_url() -> str:
