@@ -8,10 +8,12 @@ authors = [
 ]
 requires-python = ">=3.12"
 dependencies = [
+    "anthropic>=2.6.0",
     "fastapi>=0.162.2",
     "pandas>=3.1.1",
     "python-dotenv>=1.2.4",
     "requests>=2.34.2",
+    "sqlalchemy>=2.1.8",
     "streamlit>=1.67.0",
     "uvicorn[standard]>=0.54.0",
 ]
