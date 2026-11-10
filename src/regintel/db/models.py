@@ -77,6 +77,13 @@ class AnalysisRecord(Base):
     summary_points: Mapped[list] = mapped_column(JSON)  # [{claim, quote, supported}]
     all_citations_supported: Mapped[bool] = mapped_column(Boolean)
 
+    # Added in prompt v3; nullable so older analyses stay valid
+    rare_disease: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    labelling_impact: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    labelling_documents: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    action_owners: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    portfolio_impacts: Mapped[list | None] = mapped_column(JSON, nullable=True)
+
     # Human-in-the-loop review, filled in from the review screen later
     review_status: Mapped[str] = mapped_column(
         String(20), default="pending", index=True
@@ -88,3 +95,26 @@ class AnalysisRecord(Base):
     )
 
     update: Mapped[Update] = relationship(back_populates="analyses")
+
+
+class ImpactAssessmentRecord(Base):
+    """A drafted labelling impact assessment for one analysis, plus its review status."""
+
+    __tablename__ = "impact_assessments"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    analysis_id: Mapped[int] = mapped_column(ForeignKey("analyses.id"), index=True)
+    model: Mapped[str] = mapped_column(String(100))
+    prompt_version: Mapped[str] = mapped_column(String(20))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow
+    )
+    content: Mapped[dict] = mapped_column(JSON)
+    all_citations_supported: Mapped[bool] = mapped_column(Boolean)
+    status: Mapped[str] = mapped_column(
+        String(20), default="draft"
+    )  # draft/accepted/needs_rework
+    reviewer_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    reviewed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )

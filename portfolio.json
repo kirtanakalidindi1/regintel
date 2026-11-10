@@ -1,0 +1,26 @@
+{
+  "description": "Mock watchlist built from public information only. Edit freely: each entry is a product or drug class to monitor.",
+  "items": [
+    {"name": "EGFR tyrosine kinase inhibitors", "area": "oncology",
+     "examples": ["osimertinib", "gefitinib", "erlotinib", "afatinib"]},
+    {"name": "PARP inhibitors", "area": "oncology",
+     "examples": ["olaparib", "niraparib", "rucaparib", "talazoparib"]},
+    {"name": "PD-1/PD-L1 checkpoint inhibitors", "area": "oncology",
+     "examples": ["pembrolizumab", "nivolumab", "durvalumab", "atezolizumab", "cemiplimab"]},
+    {"name": "Antibody-drug conjugates", "area": "oncology",
+     "examples": ["trastuzumab deruxtecan", "sacituzumab govitecan", "enfortumab vedotin"]},
+    {"name": "CDK4/6 inhibitors", "area": "oncology",
+     "examples": ["palbociclib", "ribociclib", "abemaciclib"]},
+    {"name": "Complement C5 inhibitors", "area": "rare disease",
+     "examples": ["eculizumab", "ravulizumab"]},
+    {"name": "CFTR modulators", "area": "rare disease",
+     "examples": ["elexacaftor/tezacaftor/ivacaftor", "ivacaftor", "lumacaftor/ivacaftor"]},
+    {"name": "Gene and gene-edited therapies", "area": "rare disease",
+     "examples": ["exagamglogene autotemcel", "onasemnogene abeparvovec",
+                  "valoctocogene roxaparvovec"]},
+    {"name": "Enzyme replacement therapies", "area": "rare disease",
+     "examples": ["agalsidase beta", "alglucosidase alfa", "imiglucerase"]},
+    {"name": "Duchenne muscular dystrophy therapies", "area": "rare disease",
+     "examples": ["givinostat", "vamorolone", "delandistrogene moxeparvovec"]}
+  ]
+}

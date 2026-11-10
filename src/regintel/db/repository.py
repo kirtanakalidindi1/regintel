@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 from sqlalchemy import select
 from sqlalchemy.orm import Session, aliased
 
-from regintel.db.models import AnalysisRecord, Update
+from regintel.db.models import AnalysisRecord, ImpactAssessmentRecord, Update
 from regintel.ingest.schema import NormalizedUpdate
 
 
@@ -105,7 +105,38 @@ def save_analysis(session: Session, update: Update, result) -> AnalysisRecord:
         relevance_rationale=a.relevance_rationale,
         summary_points=result.summary_points,
         all_citations_supported=result.all_citations_supported,
+        rare_disease=a.rare_disease,
+        labelling_impact=a.labelling_impact,
+        labelling_documents=list(a.labelling_documents),
+        action_owners=list(a.action_owners),
+        portfolio_impacts=[p.model_dump() for p in a.portfolio_impacts],
     )
     session.add(record)
     session.commit()
     return record
+
+
+def save_assessment(
+    session: Session, analysis: AnalysisRecord, result
+) -> ImpactAssessmentRecord:
+    record = ImpactAssessmentRecord(
+        analysis_id=analysis.id,
+        model=result.model,
+        prompt_version=result.prompt_version,
+        content=result.content,
+        all_citations_supported=result.all_citations_supported,
+    )
+    session.add(record)
+    session.commit()
+    return record
+
+
+def latest_assessment(
+    session: Session, analysis_id: int
+) -> ImpactAssessmentRecord | None:
+    return session.scalar(
+        select(ImpactAssessmentRecord)
+        .where(ImpactAssessmentRecord.analysis_id == analysis_id)
+        .order_by(ImpactAssessmentRecord.id.desc())
+        .limit(1)
+    )

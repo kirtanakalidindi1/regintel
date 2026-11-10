@@ -19,6 +19,10 @@ class UpdateFilters:
     therapeutic_area: str | None = None
     review_status: str | None = None
     analysed: bool | None = None
+    labelling_impact: bool | None = None
+    rare_disease: bool | None = None
+    portfolio_item: str | None = None
+    action_owner: str | None = None
     q: str | None = None
     date_from: date | None = None
     date_to: date | None = None
@@ -77,16 +81,39 @@ def filtered_rows(
     )
 
     rows = [(u, a) for u, a in session.execute(stmt)]
-    # Therapeutic areas are stored as a JSON list, so filter them in Python. This keeps the
-    # query identical on SQLite and Postgres, and the dataset is small.
-    if f.therapeutic_area:
-        rows = [
-            (u, a) for u, a in rows if a and f.therapeutic_area in a.therapeutic_areas
+
+    # Labels can be corrected by reviewers and several are JSON lists, so these filters run
+    # in Python on the final (reviewed) labels. The dataset is small, and this keeps
+    # behaviour identical on SQLite and Postgres.
+    def keep(analysis: AnalysisRecord) -> bool:
+        labels = final_labels(analysis)
+        checks = [
+            not f.therapeutic_area or f.therapeutic_area in labels["therapeutic_areas"],
+            f.labelling_impact is None
+            or bool(labels["labelling_impact"]) == f.labelling_impact,
+            f.rare_disease is None or bool(labels["rare_disease"]) == f.rare_disease,
+            not f.action_owner or f.action_owner in labels["action_owners"],
+            not f.portfolio_item or f.portfolio_item in portfolio_items(labels),
         ]
+        return all(checks)
+
+    label_filters = (
+        f.therapeutic_area,
+        f.labelling_impact,
+        f.rare_disease,
+        f.action_owner,
+        f.portfolio_item,
+    )
+    if any(v is not None and v != "" for v in label_filters):
+        rows = [(u, a) for u, a in rows if a is not None and keep(a)]
 
     total = len(rows)
     end = None if limit is None else offset + limit
     return total, rows[offset:end]
+
+
+def portfolio_items(labels: dict) -> list[str]:
+    return [p["watchlist_item"] for p in labels.get("portfolio_impacts") or []]
 
 
 def final_labels(analysis: AnalysisRecord | None) -> dict:
@@ -99,6 +126,11 @@ def final_labels(analysis: AnalysisRecord | None) -> dict:
         "therapeutic_areas": analysis.therapeutic_areas,
         "relevance": analysis.relevance,
         "summary_points": analysis.summary_points,
+        "rare_disease": analysis.rare_disease,
+        "labelling_impact": analysis.labelling_impact,
+        "labelling_documents": analysis.labelling_documents or [],
+        "action_owners": analysis.action_owners or [],
+        "portfolio_impacts": analysis.portfolio_impacts or [],
     }
     if analysis.review_status == "corrected" and analysis.reviewed_output:
         labels.update(analysis.reviewed_output)

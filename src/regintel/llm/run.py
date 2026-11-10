@@ -13,11 +13,15 @@ from regintel import config
 from regintel.db.database import get_engine, get_sessionmaker, init_db
 from regintel.db.repository import save_analysis, updates_needing_analysis
 from regintel.llm.analyze import PROMPT_VERSION, AnalysisError, analyze_update
+from regintel.portfolio import load_portfolio
 
 log = logging.getLogger("regintel.llm")
 
 
-def run(session, client, model: str, limit: int) -> dict[str, int]:
+def run(
+    session, client, model: str, limit: int, portfolio: list[dict] | None = None
+) -> dict[str, int]:
+    portfolio = portfolio if portfolio is not None else load_portfolio()
     counts = {"analyzed": 0, "failed": 0, "citations_all_supported": 0}
     for update in updates_needing_analysis(session, PROMPT_VERSION, limit):
         try:
@@ -28,6 +32,7 @@ def run(session, client, model: str, limit: int) -> dict[str, int]:
                 source=update.source,
                 source_type=update.source_type,
                 body_text=update.body_text,
+                portfolio=portfolio,
             )
         except (AnalysisError, anthropic.APIError) as exc:
             log.warning("Update %s (%s) failed: %s", update.id, update.source_id, exc)

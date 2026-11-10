@@ -14,6 +14,8 @@ DATA_DIR = PROJECT_ROOT / "data"
 OPENFDA_API_KEY = os.getenv("OPENFDA_API_KEY")  # optional; raises openFDA rate limits
 ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
 ANTHROPIC_MODEL = os.getenv("ANTHROPIC_MODEL", "claude-sonnet-5-5")
+ASSESSMENT_MODEL = os.getenv("ASSESSMENT_MODEL", ANTHROPIC_MODEL)
+PORTFOLIO_PATH = Path(os.getenv("PORTFOLIO_PATH", PROJECT_ROOT / "portfolio.json"))
 
 
 def get_database_url() -> str:

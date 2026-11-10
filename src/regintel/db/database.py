@@ -1,10 +1,14 @@
 """Engine and session helpers."""
 
-from sqlalchemy import Engine, create_engine
+import logging
+
+from sqlalchemy import Engine, create_engine, inspect, text
 from sqlalchemy.orm import Session, sessionmaker
 
 from regintel.config import get_database_url
 from regintel.db.models import Base
+
+log = logging.getLogger(__name__)
 
 
 def get_engine(url: str | None = None) -> Engine:
@@ -12,8 +16,30 @@ def get_engine(url: str | None = None) -> Engine:
 
 
 def init_db(engine: Engine) -> None:
-    """Create any tables that don't exist yet."""
+    """Create missing tables, then add any new nullable columns to existing tables.
+
+    A deliberately small stand-in for a migration tool: it only ever adds nullable
+    columns, which is safe on both SQLite and Postgres.
+    """
     Base.metadata.create_all(engine)
+    inspector = inspect(engine)
+    with engine.begin() as conn:
+        for table in Base.metadata.sorted_tables:
+            existing = {col["name"] for col in inspector.get_columns(table.name)}
+            for column in table.columns:
+                if column.name in existing:
+                    continue
+                if not column.nullable:
+                    raise RuntimeError(
+                        f"Cannot add non-nullable column {table.name}.{column.name} automatically"
+                    )
+                col_type = column.type.compile(dialect=engine.dialect)
+                conn.execute(
+                    text(
+                        f'ALTER TABLE {table.name} ADD COLUMN "{column.name}" {col_type}'
+                    )
+                )
+                log.info("Added column %s.%s", table.name, column.name)
 
 
 def get_sessionmaker(engine: Engine) -> sessionmaker[Session]:

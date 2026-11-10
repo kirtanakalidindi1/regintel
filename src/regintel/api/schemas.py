@@ -6,6 +6,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from regintel.llm.schema import (
+    ActionOwner,
     ProductType,
     Relevance,
     SummaryPoint,
@@ -28,6 +29,11 @@ class AnalysisOut(BaseModel):
     relevance_rationale: str
     summary_points: list[dict]
     all_citations_supported: bool
+    rare_disease: bool | None = None
+    labelling_impact: bool | None = None
+    labelling_documents: list[str] | None = None
+    action_owners: list[str] | None = None
+    portfolio_impacts: list[dict] | None = None
     review_status: str
     reviewed_output: dict | None
     reviewer_note: str | None
@@ -46,7 +52,31 @@ class UpdateSummary(BaseModel):
     topic: str | None = None
     relevance: str | None = None
     therapeutic_areas: list[str] = []
+    rare_disease: bool | None = None
+    labelling_impact: bool | None = None
+    action_owners: list[str] = []
+    portfolio_items: list[str] = []
     review_status: str | None = None
+
+
+class AssessmentOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    analysis_id: int
+    model: str
+    prompt_version: str
+    created_at: datetime
+    content: dict
+    all_citations_supported: bool
+    status: str
+    reviewer_note: str | None
+    reviewed_at: datetime | None
+
+
+class AssessmentReviewIn(BaseModel):
+    status: Literal["accepted", "needs_rework"]
+    note: str | None = None
 
 
 class UpdateDetail(BaseModel):
@@ -61,6 +91,7 @@ class UpdateDetail(BaseModel):
     published_date: date | None
     body_text: str
     analysis: AnalysisOut | None = None
+    assessment: AssessmentOut | None = None
 
 
 class UpdateList(BaseModel):
@@ -77,6 +108,11 @@ class Corrections(BaseModel):
         default=None, min_length=1, max_length=3
     )
     relevance: Relevance | None = None
+    rare_disease: bool | None = None
+    labelling_impact: bool | None = None
+    action_owners: list[ActionOwner] | None = Field(
+        default=None, min_length=1, max_length=4
+    )
     summary_points: list[SummaryPoint] | None = Field(
         default=None, min_length=1, max_length=5
     )
